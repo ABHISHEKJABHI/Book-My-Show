@@ -6,7 +6,7 @@ pipeline {
         }
     }
    environment {
-        DOCKER_REGISTRY = "abhishek7483/bookmyshow"
+        DOCKER_REGISTRY = "abhishek7483"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
       
     }
