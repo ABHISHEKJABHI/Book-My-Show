@@ -2,13 +2,14 @@ pipeline {
     agent {
         docker {
             image 'maven:3.8.5-openjdk-17'
-            args '--network=host' // Added network host to fix SonarQube connectivity
+            args '--network=host'
         }
     }
 
     environment {
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
+        SONAR_URL = "http://localhost:9000"
     }
 
     stages {
@@ -21,20 +22,24 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                sh 'mvn clean compile -DskipTests' // Added skipTests to avoid test failures
+                sh 'mvn clean compile -DskipTests'
             }
         }
 
-       stage('Static Code Analysis') {
-      environment {
-        SONAR_URL = "http://localhost:9000"
-      }
-      steps {
-        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-          sh ' mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+                    sh """
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=scan-code1 \
+                    -Dsonar.projectName='scan-code1' \
+                    -Dsonar.host.url=${SONAR_URL} \
+                    -Dsonar.login=${SONAR_AUTH_TOKEN} \
+                    -DskipTests
+                    """
+                }
+            }
         }
-      }
-   }
         
         stage('Wait for Quality Gate') {
             steps {
@@ -53,7 +58,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Check if Dockerfile exists before building
                     def dockerfileExists = fileExists 'Dockerfile'
                     if (!dockerfileExists) {
                         error "Dockerfile not found in the workspace"
