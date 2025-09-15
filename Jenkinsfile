@@ -38,7 +38,7 @@ pipeline {
                      -Dsonar.host.url=http://localhost:9000 \
                 }
             }
-        }
+        
         
         stage('Wait for Quality Gate') {
             steps {
