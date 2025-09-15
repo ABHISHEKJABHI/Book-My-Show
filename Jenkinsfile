@@ -2,7 +2,6 @@ pipeline {
   agent {
         docker {
             image 'maven:3.8.5-openjdk-17'
-            args '--network=host'
         }
     }
    environment {
@@ -13,7 +12,8 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'master'
+        git branch: 'master',
+          url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
       }
     }
     stage('Build and Test') {
