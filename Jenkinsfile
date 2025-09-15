@@ -12,7 +12,7 @@ pipeline {
         // Replace with your Docker Hub username and repository name
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
-        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_HOST_URL = 'http://host.docker.internal:9000'
     }
 
     stages {
