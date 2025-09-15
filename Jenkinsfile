@@ -6,9 +6,12 @@ pipeline {
     }
    environment {
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
-        DOCKER_CREDENTIAL_ID = 'abhishek7483'
-      
+        DOCKER_CREDENTIAL_ID = 'abhishek7483'    
     }
+  tools
+{ maven ('mvn')
+     }
+  
   stages {
     stage('Checkout') {
       steps {
