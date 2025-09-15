@@ -35,10 +35,12 @@ pipeline {
             steps {
                withSonarQubeEnv('sonarserver') {
                    sh """
-                   mvn sonar:sonar \
-                   -Dsonar.projectKey=scan-code \
-                   -Dsonar.projectName='scan-code' \
-                   -Dsonar.host.url=${SONAR_HOST_URL}
+                   mvn clean verify sonar:sonar \
+                      -Dsonar.projectKey=scan-code1 \
+                      -Dsonar.projectName='scan-code1' \
+                      -Dsonar.host.url=${SONAR_HOST_URL}\
+                       -Dsonar.token=sqp_85256af71e8410a3474f5200749bb1b641520a1b
+                
                    """ 
                 }
             }
