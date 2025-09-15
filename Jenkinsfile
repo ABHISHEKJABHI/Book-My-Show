@@ -9,7 +9,6 @@ pipeline {
     environment {
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
-        SONAR_HOST_URL = 'http://localhost:9000' // Changed back to localhost with network=host
     }
 
     stages {
@@ -26,20 +25,16 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-               withSonarQubeEnv('sonarserver') {
-                   sh """
-                   mvn sonar:sonar \
-                   -Dsonar.projectKey=scan-code1 \
-                   -Dsonar.projectName='scan-code1' \
-                   -Dsonar.host.url=${SONAR_HOST_URL} \
-                   -Dsonar.login=sqp_85256af71e8410a3474f5200749bb1b641520a1b \
-                   -DskipTests
-                   """ 
-                }
-            }
+       stage('Static Code Analysis') {
+      environment {
+        SONAR_URL = "http://localhost:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd /opt/maven2 && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
         }
+      }
+   }
         
         stage('Wait for Quality Gate') {
             steps {
