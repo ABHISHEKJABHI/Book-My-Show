@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
+        git branch: 'master', url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
       }
     }
     stage('Build and Test') {
