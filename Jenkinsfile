@@ -18,7 +18,7 @@ pipeline {
     }
     stage('Build and Test') {
       steps {
-        sh 'cd /opt/maven3 && mvn clean package'
+        sh 'cd /opt/maven3/Book-My-Show && mvn clean package'
       }
     }
     stage('Static Code Analysis') {
@@ -27,7 +27,7 @@ pipeline {
       }
       steps {
         withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-          sh 'cd /opt/maven3 && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+          sh 'cd /opt/maven3/Book-My-Show && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
         }
       }
     }
@@ -37,7 +37,7 @@ pipeline {
       }
       steps {
         script {
-          docker.build("${DOCKER_IMAGE}", "/opt/maven3")
+          docker.build("${DOCKER_IMAGE}", "/opt/maven3/Book-My-Show")
           docker.withRegistry('https://index.docker.io/v1/', 'abhishek7483') {
             docker.image("${DOCKER_IMAGE}").push()
           }
