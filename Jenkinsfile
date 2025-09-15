@@ -6,14 +6,14 @@ pipeline {
         }
     }
    environment {
-        DOCKER_REGISTRY = "abhishek7483"
+        DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
       
     }
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'master', url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
+        git branch: 'master'
       }
     }
     stage('Build and Test') {
