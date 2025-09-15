@@ -18,7 +18,7 @@ pipeline {
     }
     stage('Build and Test') {
       steps {
-        sh 'cd /opt/maven3/Book-My-Show && mvn clean package'
+        sh 'mvn clean package'
       }
     }
     stage('Static Code Analysis') {
