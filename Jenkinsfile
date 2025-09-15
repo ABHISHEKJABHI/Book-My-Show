@@ -3,7 +3,7 @@ pipeline {
     agent {
         // Use a Docker agent for the build process to ensure a consistent environment
         docker {
-            image 'alpine:latest'
+            image 'maven:3.8.5-openjdk-17'
         }
     }
 
@@ -32,13 +32,14 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-               mvn clean verify sonar:sonar \
+               withSonarQubeEnv('SonarQube') {
+                mvn clean verify sonar:sonar \
                    -Dsonar.projectKey=scan-code \
                      -Dsonar.projectName='scan-code' \
                      -Dsonar.host.url=http://localhost:9000 \
                 }
             }
-        
+        }
         
         stage('Wait for Quality Gate') {
             steps {
