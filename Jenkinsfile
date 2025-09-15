@@ -8,7 +8,7 @@ pipeline {
    environment {
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
-        SONAR_URL = "http://localhost:9000"
+      
     }
   stages {
     stage('Checkout') {
