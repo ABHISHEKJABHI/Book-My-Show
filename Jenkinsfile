@@ -33,7 +33,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-               withSonarQubeEnv('sonarqube') {
+               withSonarQubeEnv('sonarserver') {
                    sh """
                    mvn sonar:sonar \
                    -Dsonar.projectKey=scan-code \
