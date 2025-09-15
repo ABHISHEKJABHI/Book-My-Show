@@ -1,95 +1,72 @@
 pipeline {
-    agent {
+  agent {
         docker {
             image 'maven:3.8.5-openjdk-17'
             args '--network=host'
         }
     }
-
-    environment {
-        DOCKER_REGISTRY = "abhishek7483/bookmyshow"
-        DOCKER_CREDENTIAL_ID = 'abhishek7483'
+tools {
+    maven 'mvn'
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
+      }
+    }
+    stage('Build and Test') {
+      steps {
+        sh 'cd /opt/maven3 && mvn clean package'
+      }
+    }
+    stage('Static Code Analysis') {
+      environment {
         SONAR_URL = "http://localhost:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd /opt/maven3 && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        }
+      }
     }
-
-    stages {
-        stage('Checkout Code') {
-            steps {
-                git branch: 'master',
-                  url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
-            }
+    stage('Build and Push Docker Image') {
+      environment {
+        DOCKER_IMAGE = "abhishek7483/bookmyshow:${BUILD_NUMBER}"
+      }
+      steps {
+        script {
+          docker.build("${DOCKER_IMAGE}", "/opt/maven3")
+          docker.withRegistry('https://index.docker.io/v1/', 'abhishek7483') {
+            docker.image("${DOCKER_IMAGE}").push()
+          }
         }
-
-        stage('Build with Maven') {
-            steps {
-                sh 'mvn clean compile -DskipTests'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-                    sh """
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=scan-code1 \
-                    -Dsonar.projectName='scan-code1' \
-                    -Dsonar.host.url=${SONAR_URL} \
-                    -Dsonar.login=${SONAR_AUTH_TOKEN} \
-                    -DskipTests
-                    """
-                }
-            }
-        }
-        
-        stage('Wait for Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Package Application') {
-            steps {
-                sh 'mvn package -DskipTests'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    def dockerfileExists = fileExists 'Dockerfile'
-                    if (!dockerfileExists) {
-                        error "Dockerfile not found in the workspace"
-                    }
-                    def appImage = docker.build("${env.DOCKER_REGISTRY}:${env.BUILD_NUMBER}", ".")
-                    appImage.tag("${env.DOCKER_REGISTRY}:latest")
-                }
-            }
-        }
-        
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry("https://index.docker.io/v1/", env.DOCKER_CREDENTIAL_ID) {
-                        docker.image("${env.DOCKER_REGISTRY}:${env.BUILD_NUMBER}").push()
-                        docker.image("${env.DOCKER_REGISTRY}:latest").push()
-                    }
-                }
-            }
-        }
+      }
     }
-    
-    post {
-        always {
-            echo "Pipeline finished."
-            cleanWs()
+    stage('Update Deployment File') {
+      environment {
+        GIT_REPO_NAME = "Book-My-Show"  // CORRECTED: Same repository
+        GIT_USER_NAME = "ABHISHEKJABHI"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            # Configure git
+            git config user.email "ashek7944@gmail.com"
+            git config user.name "ABHISHEKJABHI"
+            
+            # Copy deployment file INTO the repository (FIXED)
+            cp /opt/dockerimage1/deployment.yml ./deployment.yml
+            
+            # Update deployment file
+            sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" ./deployment.yml
+            
+            # Commit and push changes (FIXED - file is now in repo)
+            git add ./deployment.yml
+            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+          '''
         }
-        success {
-            echo "Pipeline succeeded."
-        }
-        failure {
-            echo "Pipeline failed."
-        }
+      }
     }
+  }
 }
