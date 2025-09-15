@@ -10,9 +10,9 @@ pipeline {
     // // Define environment variables, including Docker registry details
     // environment {
     //     // Replace with your Docker Hub username and repository name
-    //     DOCKER_REGISTRY = "your-docker-hub-username/your-repo"
-    //     DOCKER_CREDENTIAL_ID = 'dockerhub-creds'
-    // }
+              DOCKER_REGISTRY = "abhishek7483/bookmyshow"
+        DOCKER_CREDENTIAL_ID = 'abhishek7483'
+        SONAR_HOST_URL = 'http://localhost:9000'
 
     stages {
         stage('Checkout Code') {
@@ -33,10 +33,12 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                withSonarQubeEnv('SonarQube') {
-                mvn clean verify sonar:sonar \
+               sh   """
+                   mvn clean verify sonar:sonar \
                    -Dsonar.projectKey=scan-code \
                      -Dsonar.projectName='scan-code' \
-                     -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.host.url=${SONAR_HOST_URL}
+                 """ 
                 }
             }
         }
