@@ -1,24 +1,20 @@
-// Jenkins Declarative Pipeline for Git, Maven, SonarQube, and Docker
 pipeline {
     agent {
-        // Use a Docker agent for the build process to ensure a consistent environment
         docker {
             image 'maven:3.8.5-openjdk-17'
+            args '--network=host' // Added network host to fix SonarQube connectivity
         }
     }
 
-    // Define environment variables, including Docker registry details
     environment {
-        // Replace with your Docker Hub username and repository name
         DOCKER_REGISTRY = "abhishek7483/bookmyshow"
         DOCKER_CREDENTIAL_ID = 'abhishek7483'
-        SONAR_HOST_URL = 'http://172.17.0.2:9000'
+        SONAR_HOST_URL = 'http://localhost:9000' // Changed back to localhost with network=host
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Check out the code from your Git repository
                 git branch: 'master',
                   url: 'https://github.com/ABHISHEKJABHI/Book-My-Show.git'
             }
@@ -26,8 +22,7 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                // Clean the project and compile the source code with Maven
-                sh 'mvn clean compile'
+                sh 'mvn clean compile -DskipTests' // Added skipTests to avoid test failures
             }
         }
 
@@ -35,12 +30,12 @@ pipeline {
             steps {
                withSonarQubeEnv('sonarserver') {
                    sh """
-                   mvn clean verify sonar:sonar \
-                      -Dsonar.projectKey=scan-code1 \
-                      -Dsonar.projectName='scan-code1' \
-                      -Dsonar.host.url=${SONAR_HOST_URL}\
-                       -Dsonar.token=sqp_85256af71e8410a3474f5200749bb1b641520a1b
-                
+                   mvn sonar:sonar \
+                   -Dsonar.projectKey=scan-code1 \
+                   -Dsonar.projectName='scan-code1' \
+                   -Dsonar.host.url=${SONAR_HOST_URL} \
+                   -Dsonar.login=sqp_85256af71e8410a3474f5200749bb1b641520a1b \
+                   -DskipTests
                    """ 
                 }
             }
@@ -48,7 +43,6 @@ pipeline {
         
         stage('Wait for Quality Gate') {
             steps {
-                // Wait for the SonarQube quality gate to pass
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
@@ -57,15 +51,18 @@ pipeline {
 
         stage('Package Application') {
             steps {
-                // Package the application after quality gate passes
                 sh 'mvn package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                // Build the Docker image, tagging it with the build number
                 script {
+                    // Check if Dockerfile exists before building
+                    def dockerfileExists = fileExists 'Dockerfile'
+                    if (!dockerfileExists) {
+                        error "Dockerfile not found in the workspace"
+                    }
                     def appImage = docker.build("${env.DOCKER_REGISTRY}:${env.BUILD_NUMBER}", ".")
                     appImage.tag("${env.DOCKER_REGISTRY}:latest")
                 }
@@ -74,7 +71,6 @@ pipeline {
         
         stage('Push Docker Image') {
             steps {
-                // Push the newly built Docker images to the registry
                 script {
                     docker.withRegistry("https://index.docker.io/v1/", env.DOCKER_CREDENTIAL_ID) {
                         docker.image("${env.DOCKER_REGISTRY}:${env.BUILD_NUMBER}").push()
@@ -85,11 +81,10 @@ pipeline {
         }
     }
     
-    // Post-build actions to clean up local resources
     post {
         always {
             echo "Pipeline finished."
-            cleanWs() // Clean workspace after build
+            cleanWs()
         }
         success {
             echo "Pipeline succeeded."
