@@ -5,9 +5,6 @@ pipeline {
             args '--network=host'
         }
     }
-tools {
-    maven 'mvn'
-  }
   stages {
     stage('Checkout') {
       steps {
